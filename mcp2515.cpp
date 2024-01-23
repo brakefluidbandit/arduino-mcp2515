@@ -181,7 +181,7 @@ MCP2515::ERROR MCP2515::setMode(const CANCTRL_REQOP_MODE mode)
 {
     modifyRegister(MCP_CANCTRL, CANCTRL_REQOP, mode);
 
-    unsigned long endTime = millis() + 10;
+    unsigned long endTime = millis() + 1000;	// original timeout was 10ms, I changed it to 1000ms
     bool modeMatch = false;
     while (millis() < endTime) {
         uint8_t newmode = readRegister(MCP_CANSTAT);
@@ -194,8 +194,11 @@ MCP2515::ERROR MCP2515::setMode(const CANCTRL_REQOP_MODE mode)
         }
     }
 
-    return modeMatch ? ERROR_OK : ERROR_FAIL;
-
+	// changed ERROR_FAIL to ERROR_SET_MODE
+	// ERROR_SET_MODE will only be returned if modeMatch is not set
+	// modeMatch will not be set if the while loop above times out
+	// -> to help resolve this, the timeout for the loop was increased from 10ms to 1000ms
+    return modeMatch ? ERROR_OK : ERROR_SET_MODE;
 }
 
 MCP2515::ERROR MCP2515::setBitrate(const CAN_SPEED canSpeed)
@@ -493,7 +496,8 @@ MCP2515::ERROR MCP2515::setBitrate(const CAN_SPEED canSpeed, CAN_CLOCK canClock)
         return ERROR_OK;
     }
     else {
-        return ERROR_FAIL;
+		// changed from ERROR_FAIL to ERROR_SET_BITRATE so we can tell if this function fails
+        return ERROR_SET_BITRATE;
     }
 }
 
@@ -554,7 +558,8 @@ MCP2515::ERROR MCP2515::setFilterMask(const MASK mask, const bool ext, const uin
         case MASK0: reg = MCP_RXM0SIDH; break;
         case MASK1: reg = MCP_RXM1SIDH; break;
         default:
-            return ERROR_FAIL;
+			// changed ERROR_FAIL to ERROR_SET_FILTER_MASK if setting the filter mask fails (this is unused in CAN_read_debug)
+            return ERROR_SET_FILTER_MASK;
     }
 
     setRegisters(reg, tbufdata, 4);
@@ -579,7 +584,8 @@ MCP2515::ERROR MCP2515::setFilter(const RXF num, const bool ext, const uint32_t 
         case RXF4: reg = MCP_RXF4SIDH; break;
         case RXF5: reg = MCP_RXF5SIDH; break;
         default:
-            return ERROR_FAIL;
+			// changed ERROR_FAIL to ERROR_SET_FILTER if setting the filter fails (this is unused in CAN_read_debug)
+            return ERROR_SET_FILTER;
     }
 
     uint8_t tbufdata[4];
@@ -658,7 +664,9 @@ MCP2515::ERROR MCP2515::readMessage(const RXBn rxbn, struct can_frame *frame)
 
     uint8_t dlc = (tbufdata[MCP_DLC] & DLC_MASK);
     if (dlc > CAN_MAX_DLEN) {
-        return ERROR_FAIL;
+		// changed from ERROR_FAIL to ERROR_LONGDLC
+		// this only occurs if the DLC is larger than CAN_MAX_DLEN (which is 8). This indicates a malformed packet
+        return ERROR_LONGDLC;
     }
 
     uint8_t ctrl = readRegister(rxb->CTRL);

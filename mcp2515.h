@@ -210,12 +210,32 @@ class MCP2515
 {
     public:
         enum ERROR {
-            ERROR_OK        = 0,
-            ERROR_FAIL      = 1,
-            ERROR_ALLTXBUSY = 2,
-            ERROR_FAILINIT  = 3,
-            ERROR_FAILTX    = 4,
-            ERROR_NOMSG     = 5
+            ERROR_OK        		= 0,
+            ERROR_FAIL      		= 1,
+            ERROR_ALLTXBUSY 		= 2,
+            ERROR_FAILINIT  		= 3,
+            ERROR_FAILTX    		= 4,
+            ERROR_NOMSG     		= 5,
+            ERROR_LONGDLC   		= 6,
+            ERROR_SET_MODE			= 7,
+            ERROR_SET_BITRATE 		= 8,
+            ERROR_SET_FILTER_MASK	= 9,
+            ERROR_SET_FILTER		= 10
+
+			/*
+			Before, there was just ERROR_FAIL, and the error codes ended at 5. ERROR_FAIL is a general error code, but it's
+			not very helpful to find where specifically the error occured.
+
+			Everywhere where ERROR_FAIL appeared, it has been replaced with another, more descriptive error code that is unique
+			That way, if we get an error we can see where it came from
+
+			The new error codes are:
+			ERROR_LONGDLC   		= 6
+            ERROR_SET_MODE			= 7
+            ERROR_SET_BITRATE 		= 8
+            ERROR_SET_FILTER_MASK	= 9
+            ERROR_SET_FILTER		= 10
+			*/
         };
 
         enum MASK {
